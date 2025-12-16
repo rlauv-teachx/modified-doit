@@ -100,7 +100,7 @@ class Graph(DoitCmdBase):
             task = control.tasks[name]
             entry = {
                 'name': name,
-                'task_dep': task.task_dep,
+                'task_dep': sorted(task.task_dep),
                 'setup': sorted(task.setup_tasks),
                 'calc_dep': sorted(task.calc_dep),
             }
