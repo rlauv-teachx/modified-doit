@@ -1,6 +1,6 @@
 """command doit graph - inspect the task dependency graph"""
 
-from collections import deque
+from collections import deque, defaultdict
 import json
 
 from .cmd_base import DoitCmdBase
@@ -51,10 +51,11 @@ class Graph(DoitCmdBase):
 
     def _prepare_lazy_materialisation(self, control):
         """Strip generator-produced subtasks for lazy re-insertion later so they don't need to be processed again."""
-        pending = {}
+        pending = defaultdict(dict)
         for name, task in list(control.tasks.items()):
             if getattr(task, 'subtask_of', None):
-                pending[name] = control.tasks.pop(name)
+                control.tasks.pop(name)
+                pending[task.subtask_of][name] = task
         return pending
 
     def _collect_nodes(self, control):
@@ -66,16 +67,19 @@ class Graph(DoitCmdBase):
 
         while queue:
             name = queue.popleft()
-            visited.add(name)
             if name in visited:
                 continue
+
             task = control.tasks.get(name)
             if task is None:
                 self._lazy_materialise(control, name)
-                if name in control.tasks:
-                    queue.appendleft(name)
+                task = control.tasks.get(name)
+
+            if task is None:
                 visited.add(name)
                 continue
+
+            visited.add(name)
             processed.add(name)
             queue.extend(dep for dep in task.task_dep if dep not in visited)
             queue.extend(dep for dep in task.setup_tasks if dep not in visited)
@@ -129,7 +133,6 @@ class Graph(DoitCmdBase):
             return
 
         basename = name.split(':', 1)[0]
-        for candidate in list(pending.keys()):
-            if candidate == name or candidate.startswith(f"{basename}:"):
-                control.tasks[candidate] = pending.pop(candidate)
+        if basename in pending:
+            control.tasks.update(pending.pop(basename))
 

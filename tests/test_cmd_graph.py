@@ -2,6 +2,7 @@ from io import StringIO
 import json
 
 from doit.cmd_graph import Graph
+from doit.control import TaskControl
 from doit.task import Task
 from tests.conftest import tasks_sample, CmdFactory
 
@@ -54,4 +55,16 @@ class TestCmdGraph:
         cmd_graph._execute()
 
         assert marker == []
+
+    def test_lazy_materialisation(self):
+        output = StringIO()
+        tasks = tasks_sample()
+        cmd_graph = CmdFactory(Graph, outstream=output, task_list=tasks)
+        control = TaskControl(cmd_graph.task_list)
+        control.process(cmd_graph.sel_tasks)
+
+        cmd_graph._pending_lazy = cmd_graph._prepare_lazy_materialisation(control)
+        cmd_graph._lazy_materialise(control, 'g1.a')
+
+        assert 'g1.a' in control.tasks
 
