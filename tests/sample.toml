@@ -1,0 +1,11 @@
+optx = "6"
+opty = "7"
+
+[plugins.command]
+foo = "tests.sample_plugin:MyCmd"
+
+[commands.foo]
+nval = 33
+
+[tasks.bar]
+opt = "baz"
