@@ -16,7 +16,10 @@ class TestCmdGraph:
         cmd_graph._execute()
 
         text = output.getvalue()
-        assert text == ""
+        assert "g1\n" in text
+        assert "  task_dep: g1.a, g1.b" in text
+        assert "t3\n" in text
+        assert "  task_dep: t1" in text
 
     def test_json_output(self):
         output = StringIO()
@@ -26,7 +29,9 @@ class TestCmdGraph:
         cmd_graph._execute(output='json')
 
         data = json.loads(output.getvalue())
-        assert data == []
+        g1_entry = next(item for item in data if item['name'] == 'g1')
+        assert g1_entry['task_dep'] == ['g1.a', 'g1.b']
+        assert g1_entry['setup'] == []
 
     def test_selection_limits_graph(self):
         output = StringIO()
@@ -38,7 +43,7 @@ class TestCmdGraph:
 
         data = json.loads(output.getvalue())
         names = {entry['name'] for entry in data}
-        assert names == set()
+        assert names == {'t3', 't1'}
 
     def test_actions_are_not_executed(self):
         output = StringIO()
