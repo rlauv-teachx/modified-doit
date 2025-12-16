@@ -34,6 +34,21 @@ class TestCmdGraph:
         assert g1_entry['task_dep'] == ['g1.a', 'g1.b']
         assert g1_entry['setup'] == []
 
+    def test_task_dependencies_sorted(self):
+        output = StringIO()
+        # t1 has dependencies in unsorted order
+        t1 = Task("t1", None, task_dep=["c", "b", "a"])
+        ta = Task("a", None)
+        tb = Task("b", None)
+        tc = Task("c", None)
+        
+        tasks = [t1, ta, tb, tc]
+        cmd_graph = CmdFactory(Graph, outstream=output, task_list=tasks)
+        cmd_graph._execute()
+        
+        text = output.getvalue()
+        assert "task_dep: a, b, c" in text
+
     def test_selection_limits_graph(self):
         output = StringIO()
         tasks = tasks_sample()
@@ -45,6 +60,19 @@ class TestCmdGraph:
         data = json.loads(output.getvalue())
         names = {entry['name'] for entry in data}
         assert names == {'t3', 't1'}
+
+    def test_task_traversal(self):
+        output = StringIO()
+        setup_dep = Task("setup_dep", None)
+        setup_task = Task("setup_task", None, task_dep=["setup_dep"])
+        t1 = Task("t1", None, setup=["setup_task"])
+        
+        tasks = [setup_dep, setup_task, t1]
+        cmd_graph = CmdFactory(Graph, outstream=output, task_list=tasks, sel_tasks=["t1"])
+        cmd_graph._execute()
+        
+        text = output.getvalue()
+        assert "setup_dep" in text
 
     def test_actions_are_not_executed(self):
         output = StringIO()
@@ -67,4 +95,3 @@ class TestCmdGraph:
         cmd_graph._lazy_materialise(control, 'g1.a')
 
         assert 'g1.a' in control.tasks
-

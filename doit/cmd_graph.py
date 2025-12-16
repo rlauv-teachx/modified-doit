@@ -82,7 +82,6 @@ class Graph(DoitCmdBase):
             visited.add(name)
             processed.add(name)
             queue.extend(dep for dep in task.task_dep if dep not in visited)
-            queue.extend(dep for dep in task.setup_tasks if dep not in visited)
         return processed
 
     @staticmethod
@@ -101,7 +100,7 @@ class Graph(DoitCmdBase):
             task = control.tasks[name]
             entry = {
                 'name': name,
-                'task_dep': sorted(task.task_dep),
+                'task_dep': task.task_dep,
                 'setup': sorted(task.setup_tasks),
                 'calc_dep': sorted(task.calc_dep),
             }
