@@ -45,8 +45,6 @@ class TestCmdGraph:
         d1 = Task("d1", None)
         s1 = Task("s1", None, task_dep=['d1'], setup=['s2'])
         t1 = Task("t1", None, setup=['s1'], task_dep=['d2'])
-        
-        # Extra task not connected to t1, shouldn't appear
         other = Task("other", None)
         
         tasks = [s3, d2, s2, d1, s1, t1, other]
@@ -74,13 +72,10 @@ class TestCmdGraph:
     def test_subtasks(self):
         output = StringIO()
         tasks = tasks_sample()
-        # g1 depends on g1.a and g1.b which are subtasks.
-        # This implicitly tests lazy materialisation mechanism.
         cmd_graph = CmdFactory(Graph, outstream=output, task_list=tasks, sel_tasks=['g1'])
 
         cmd_graph._execute()
 
         text = output.getvalue()
-        # Subtasks should be present as nodes in the graph
         assert "g1.a\n" in text
         assert "g1.b\n" in text
