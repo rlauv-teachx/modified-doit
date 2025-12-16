@@ -39,9 +39,17 @@ class TestCmdGraph:
 
     def test_selection_limits_graph(self):
         output = StringIO()
-        setup = Task("setup_task", None)
-        t1 = Task("t1", None, setup=['setup_task'])
-        tasks = [setup, t1]
+        s3 = Task("s3", None)
+        d2 = Task("d2", None, setup=['s3'])
+        s2 = Task("s2", None)
+        d1 = Task("d1", None)
+        s1 = Task("s1", None, task_dep=['d1'], setup=['s2'])
+        t1 = Task("t1", None, setup=['s1'], task_dep=['d2'])
+        
+        # Extra task not connected to t1, shouldn't appear
+        other = Task("other", None)
+        
+        tasks = [s3, d2, s2, d1, s1, t1, other]
 
         cmd_graph = CmdFactory(Graph, outstream=output, task_list=tasks,
                                sel_tasks=['t1'], sel_default_tasks=False)
@@ -50,8 +58,8 @@ class TestCmdGraph:
 
         data = json.loads(output.getvalue())
         names = {entry['name'] for entry in data}
-        assert 'setup_task' in names
-        assert names == {'t1', 'setup_task'}
+        expected = {'t1', 's1', 'd1', 's2', 'd2', 's3'}
+        assert names == expected
 
     def test_actions_are_not_executed(self):
         output = StringIO()
@@ -66,10 +74,13 @@ class TestCmdGraph:
     def test_subtasks(self):
         output = StringIO()
         tasks = tasks_sample()
+        # g1 depends on g1.a and g1.b which are subtasks.
+        # This implicitly tests lazy materialisation mechanism.
         cmd_graph = CmdFactory(Graph, outstream=output, task_list=tasks, sel_tasks=['g1'])
 
         cmd_graph._execute()
 
         text = output.getvalue()
+        # Subtasks should be present as nodes in the graph
         assert "g1.a\n" in text
         assert "g1.b\n" in text
