@@ -109,7 +109,7 @@ class Graph(DoitCmdBase):
         Returns an iterator over all dependencies without creating
         intermediate lists for better memory efficiency.
         """
-        return chain(task.task_dep, task.calc_dep)
+        return chain(task.task_dep, task.setup_tasks)
 
     @staticmethod
     def _ordered_names(control, nodes):
@@ -173,3 +173,8 @@ class Graph(DoitCmdBase):
         if basename in pending:
             control.tasks.update(pending.pop(basename))
             return
+
+        for group, tasks in pending.items():
+            if basename in tasks:
+                control.tasks.update(tasks)
+                return
