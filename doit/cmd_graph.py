@@ -158,12 +158,10 @@ class Graph(DoitCmdBase):
             self.outstream.write("\n")
 
     def _lazy_materialise(self, control, name):
-        """Reinsert pending subtasks when first referenced by name.
+        """Reinsert pending subtasks when first referenced by name. 
         
-        When a task name is referenced, this method checks if there are
-        pending subtasks that should be materialized. It tries two approaches:
-        1. If the name contains ':', extract basename (e.g., 'g1:a' -> 'g1')
-        2. Check if the name appears as a subtask in any pending group
+        When a task name is referenced, this method checks if there are 
+        pending subtasks that should be materialized.
         """
         pending = self._pending_lazy
         if not pending:
@@ -174,7 +172,7 @@ class Graph(DoitCmdBase):
             control.tasks.update(pending.pop(basename))
             return
 
-        for group, tasks in pending.items():
-            if basename in tasks:
+        for _, tasks in pending.items():
+            if name in tasks:
                 control.tasks.update(tasks)
                 return
