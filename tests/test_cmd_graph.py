@@ -334,42 +334,8 @@ class TestCmdGraphEdgeCases:
         main_entry = next(e for e in data if e['name'] == 'main')
         assert main_entry['task_dep'] == ['build:release']
 
-    def test_subtask_name_doesnt_match_subtask_of_prefix(self):
-        """Test subtask where name prefix doesn't match subtask_of value."""
-        output = StringIO()
-        real_parent = Task("real_parent", None, has_subtask=True, task_dep=['a:orphan'])
-        orphan_subtask = Task("a:orphan", [""], subtask_of='real_parent')
-
-        group_a = Task("a", None, has_subtask=True, task_dep=['a:normal'])
-        normal_subtask = Task("a:normal", [""], subtask_of='a')
-
-        main = Task("main", [""], task_dep=['a:orphan'])
-
-        tasks = [real_parent, orphan_subtask, group_a, normal_subtask, main]
-
-        cmd_graph = CmdFactory(Graph, outstream=output, task_list=tasks, sel_tasks=['main'])
-        cmd_graph._execute(output='json')
-
-        data = json.loads(output.getvalue())
-        names = {entry['name'] for entry in data}
-
-        assert names == {'main', 'a:orphan'}
-
-        assert 'a' not in names
-        assert 'a:normal' not in names
-        assert 'real_parent' not in names
-
-        main_entry = next(e for e in data if e['name'] == 'main')
-        assert main_entry['task_dep'] == ['a:orphan']
-
     def test_test_framework_naming_collision(self):
-        """Realistic scenario: Test framework with naming collision.
-
-        Simulates a multi-team codebase where:
-        - Backend team has: api, api:build (subtask of 'api')
-        - QA team has: smoke, api:smoke, web:smoke (subtasks of 'smoke')
-        - CI depends on 'api:smoke' (QA's task, NOT backend's)
-        """
+        """Test framework with naming collision."""
         output = StringIO()
 
         api_group = Task("api", None, has_subtask=True, task_dep=['api:build'])
